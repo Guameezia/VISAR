@@ -15,10 +15,12 @@ max_tokens = 2048
 enablePreload = False
 test = False
 
-with open('openai_key.json') as key_file:
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+with open(os.path.join(BASE_DIR, 'openai_key.json')) as key_file:
     openai.api_key = json.load(key_file)['key']
 
-with open('mongoDB_key.json') as key_file:
+with open(os.path.join(BASE_DIR, 'mongoDB_key.json')) as key_file:
     mongoDB_key = json.load(key_file)['key']
 
 # Update your mongoDB key here. You need to create a new mongoDB database called "gptwriting", and create collections called "users" and "interactionData" in the database.

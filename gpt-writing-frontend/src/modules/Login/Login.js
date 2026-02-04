@@ -48,61 +48,96 @@ export default function SignIn () {
   const navigate = useNavigate()
 
   async function authenticate () {
-    const res = await fetch('https://visar.app/api/signup', {
-      method: 'POST',
-      mode: 'cors',
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json',
-        Accept: 'application/json'
-      },
-      body: JSON.stringify({
-        username: username,
-        password: password,
-        condition: cond
+    if (!username.trim()) {
+      setStatus('fail')
+      setMessage('Please enter a nickname')
+      return
+    }
+
+    setStatus('pending')
+    setMessage('')
+
+    try {
+      const response = await fetch('https://visar.app/api/signup', {
+        method: 'POST',
+        mode: 'cors',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json'
+        },
+        body: JSON.stringify({
+          username: username,
+          password: password,
+          condition: cond
+        })
       })
+
+      const res = await response.json()
+
+      console.log(res)
+      setStatus(res.status)
+      setMessage(res.message)
+      let editorState = null
+      let flowSlice = null
+      let editorSlice = null
+      if (res.preload === true) {
+        editorState = res.editorState
+        flowSlice = res.flowSlice
+        editorSlice = res.editorSlice
+      }
+
+      const taskProblem = res.taskProblem
+      const taskDescription = res.taskDescription
+
+      const task = {
+        topic: taskProblem,
+        description: taskDescription
+      }
+
+      console.log('task: ', task)
+
+      const sessionId = Math.floor(Math.random() * 10000)
+
+      if (res.status === 'success') {
+        navigate('/editor', {
+          state: {
+            condition: 'advanced',
+            username: username,
+            preload: res.preload,
+            sessionId: sessionId,
+            editorState: editorState,
+            flowSlice: flowSlice,
+            editorSlice: editorSlice,
+            taskDescription: task
+          }
+        })
+        return
+      }
+    } catch (error) {
+      console.error('login error', error)
+    }
+
+    // 如果上面的真实请求失败了，或者 status 不是 success，
+    // 为了本地「模拟」可以直接构造一个假数据进入编辑器
+    const mockTask = {
+      topic: 'Demo task',
+      description: 'This is a simulated task for local testing.'
+    }
+
+    const mockSessionId = Math.floor(Math.random() * 10000)
+
+    navigate('/editor', {
+      state: {
+        condition: 'advanced',
+        username: username || 'Guest',
+        preload: false,
+        sessionId: mockSessionId,
+        editorState: null,
+        flowSlice: null,
+        editorSlice: null,
+        taskDescription: mockTask
+      }
     })
-      .then(res => res.json())
-      .then(res => {
-        console.log(res)
-        setStatus(res.status)
-        setMessage(res.message)
-        let editorState = null
-        let flowSlice = null
-        let editorSlice = null
-        if (res.preload === true) {
-          editorState = res.editorState
-          flowSlice = res.flowSlice
-          editorSlice = res.editorSlice
-        }
-
-        const taskProblem = res.taskProblem
-        const taskDescription = res.taskDescription
-
-        const task = {
-          topic: taskProblem,
-          description: taskDescription
-        }
-
-        console.log('task: ', task)
-
-        const sessionId = Math.floor(Math.random() * 10000)
-
-        if (res.status === 'success') {
-          navigate('/editor', {
-            state: {
-              condition: 'advanced',
-              username: username,
-              preload: res.preload,
-              sessionId: sessionId,
-              editorState: editorState,
-              flowSlice: flowSlice,
-              editorSlice: editorSlice,
-              taskDescription: task
-            }
-          })
-        }
-      })
   }
 
   return (
